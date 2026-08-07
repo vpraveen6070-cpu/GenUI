@@ -1,0 +1,19 @@
+{
+  "name": "genui",
+  "version": "1.0.0",
+  "description": "GenUI – Generative UI for Dynamic Workflows",
+  "main": "index.html",
+  "scripts": {
+    "dev": "python3 -m http.server 8085",
+    "start": "python3 -m http.server 8085",
+    "serve": "npx -y serve ."
+  },
+  "keywords": [
+    "generative-ui",
+    "ai",
+    "hackathon",
+    "firebase"
+  ],
+  "author": "GenUI Team",
+  "license": "MIT"
+}
