@@ -1,0 +1,10 @@
+<svg width="100%" height="100%" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Architectural Slate 'G' Logo -->
+  <path d="M 82 24 L 38 24 C 26.9543 24 18 32.9543 18 44 V 56 C 18 67.0457 26.9543 76 38 76 H 64 C 75.0457 76 84 67.0457 84 56 V 48 H 52" 
+        stroke="#2D2D2D" stroke-width="10" stroke-linecap="square" stroke-linejoin="miter"/>
+  <!-- Sub-surface UI Structural Detail Lines -->
+  <line x1="38" y1="36" x2="64" y2="36" stroke="#2D2D2D" stroke-width="5" stroke-linecap="round"/>
+  <line x1="38" y1="64" x2="52" y2="64" stroke="#2D2D2D" stroke-width="5" stroke-linecap="round"/>
+  <!-- Warm Bronze Precision Accent -->
+  <rect x="48" y="44" width="8" height="8" rx="2" fill="#BFA181"/>
+</svg>

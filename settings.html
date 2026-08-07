@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings | GenUI</title>
+  
+  <link rel="icon" type="image/svg+xml" href="assets/genui-logo-mark.svg">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/responsive.css">
+
+  <!-- Firebase v10 Compat SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    window.firebaseConfig = {
+      apiKey: "AIzaSyDrqKFNgfJYs8OXMpXHJU6N73SBK6wqf64",
+      authDomain: "genui-4fd74.firebaseapp.com",
+      projectId: "genui-4fd74",
+      storageBucket: "genui-4fd74.firebasestorage.app",
+      messagingSenderId: "261945930323",
+      appId: "1:1234567890:web:abc123def456",
+      measurementId: "G-9W5GXP04PQ"
+    };
+  </script>
+</head>
+<body>
+
+  <div class="app-layout">
+    <!-- LEFT SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div>
+        <div class="brand-container">
+          <img src="assets/genui-logo-mark.svg" alt="GenUI Logo" class="brand-logo-img">
+          <span class="brand-title">GenUI</span>
+        </div>
+
+        <nav class="sidebar-nav">
+          <a href="dashboard.html" class="nav-item" title="New Workflow">
+            <span class="nav-icon">✨</span>
+            <span class="nav-text">New Workflow</span>
+          </a>
+          <a href="workflows.html" class="nav-item" title="My Workflows">
+            <span class="nav-icon">📂</span>
+            <span class="nav-text">My Workflows</span>
+          </a>
+          <a href="settings.html" class="nav-item active" title="Settings">
+            <span class="nav-icon">⚙️</span>
+            <span class="nav-text">Settings</span>
+          </a>
+        </nav>
+      </div>
+
+      <div class="sidebar-footer">
+        <a href="index.html" class="nav-item" title="Back to Home" style="padding:8px 12px; margin:0; text-decoration:none;">
+          <span class="nav-icon">🏠</span>
+          <span class="nav-text">Back to Home</span>
+        </a>
+        <div class="user-profile">
+          <div class="user-avatar" id="user-avatar-text">D</div>
+          <div class="user-info">
+            <span class="user-name" id="user-name-text">Developer</span>
+            <span class="user-role" id="user-role-text">Free Tier</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="workspace-container" style="padding:30px 40px;">
+      
+      <header style="display:flex; align-items:center; gap:12px; border-bottom:1px solid var(--glass-border); padding-bottom:20px; margin-bottom:30px;">
+        <button class="btn btn-icon sidebar-toggle-btn" onclick="toggleSidebar()" title="Collapse Sidebar">◀</button>
+        <div>
+          <h2>Settings & AI Configuration</h2>
+          <p style="color:var(--text-muted); font-size:0.9rem;">Manage LLM API providers, environment keys, theme preferences, and security options.</p>
+        </div>
+      </header>
+
+      <div style="max-width:750px; display:flex; flex-direction:column; gap:24px;">
+
+        <!-- AI Engine Config Card -->
+        <div class="glass-panel" style="padding:24px;">
+          <h3 style="margin-bottom:16px; display:flex; align-items:center; gap:8px;">
+            <span>🤖</span> AI LLM API Configuration
+          </h3>
+
+          <div class="form-group">
+            <label class="form-label">AI Provider & Model</label>
+            <select id="setting-provider" class="form-select" onchange="toggleCustomEndpoint()">
+              <option value="gemini|gemini-2.0-flash">Google Gemini 2.0 Flash (2026 Recommended)</option>
+              <option value="gemini|gemini-1.5-flash">Google Gemini 1.5 Flash</option>
+              <option value="gemini|gemini-1.5-pro">Google Gemini 1.5 Pro</option>
+              <option value="openai|gpt-4o">OpenAI GPT-4o</option>
+              <option value="openai|gpt-4o-mini">OpenAI GPT-4o Mini</option>
+              <option value="openai|o3-mini">OpenAI o3-mini (2026 Reasoning)</option>
+              <option value="claude|claude-3-5-sonnet-20241022">Anthropic Claude 3.5 Sonnet</option>
+              <option value="deepseek|deepseek-chat">DeepSeek V3 / R1 (Reasoner)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">LLM API Key</label>
+            <input type="password" id="setting-api-key" class="form-input" placeholder="AIzaSy... or sk-...">
+            <small style="color:var(--text-subtle); font-size:0.78rem; margin-top:4px;">
+              Stored securely in browser memory. Never shared with third parties. Leave blank to use built-in Offline Smart Generator.
+            </small>
+          </div>
+
+          <button class="btn btn-primary" onclick="saveAISettings()" style="margin-top:10px;">Save AI Credentials</button>
+        </div>
+
+        <!-- Appearance & Theme Card -->
+        <div class="glass-panel" style="padding:24px;">
+          <h3 style="margin-bottom:16px; display:flex; align-items:center; gap:8px;">
+            <span>🎨</span> Appearance & Theme
+          </h3>
+
+          <div class="form-group">
+            <label class="form-label">Theme Mode</label>
+            <select id="setting-theme" class="form-select" onchange="applyTheme(this.value)">
+              <option value="cream">Cream & Slate Minimalist (Default)</option>
+              <option value="light">Light Studio Mode</option>
+            </select>
+          </div>
+        </div>
+
+      </div>
+
+    </main>
+  </div>
+
+  <!-- JS Modules -->
+  <script src="js/utils.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/app.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      FirebaseEngine.init();
+      AuthController.init();
+
+      // Populate current settings
+      const key = localStorage.getItem('genui_api_key') || '';
+      const prov = localStorage.getItem('genui_provider') || 'gemini';
+      const theme = localStorage.getItem('genui_theme') || 'cream';
+
+      document.getElementById('setting-api-key').value = key;
+      document.getElementById('setting-provider').value = prov;
+      document.getElementById('setting-theme').value = theme;
+    });
+
+    function saveAISettings() {
+      const key = document.getElementById('setting-api-key').value.trim();
+      const prov = document.getElementById('setting-provider').value;
+
+      localStorage.setItem('genui_api_key', key);
+      localStorage.setItem('genui_provider', prov);
+
+      Utils.showToast('AI Settings updated successfully!', 'success');
+    }
+
+    function applyTheme(themeVal) {
+      localStorage.setItem('genui_theme', themeVal);
+      document.documentElement.setAttribute('data-theme', themeVal);
+      Utils.showToast(`Switched to ${themeVal} mode`, 'info');
+    }
+  </script>
+</body>
+</html>

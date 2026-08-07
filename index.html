@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GenUI – Generative UI for Dynamic Workflows</title>
+  <meta name="description"
+    content="Describe what you need, and AI builds the functional interface for you in seconds using controlled JSON schemas.">
+
+  <link rel="icon" type="image/svg+xml" href="assets/genui-logo-mark.svg">
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- Firebase v10 Compat SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    window.firebaseConfig = {
+      apiKey: "AIzaSyDrqKFNgfJYs8OXMpXHJU6N73SBK6wqf64",
+      authDomain: "genui-4fd74.firebaseapp.com",
+      projectId: "genui-4fd74",
+      storageBucket: "genui-4fd74.firebasestorage.app",
+      messagingSenderId: "261945930323",
+      appId: "1:261945930323:web:64fb34db006f6832094ca6",
+      measurementId: "G-9W5GXP04PQ"
+    };
+  </script>
+  <style>
+    html,
+    body {
+      height: 100vh;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: var(--bg-base);
+    }
+
+    /* Looping Frame Sequence Background (Home Page Only) */
+    #bg-frame-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .landing-container {
+      max-width: 1200px;
+      height: 100vh;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-sizing: border-box;
+    }
+
+    .navbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 18px;
+      margin: 12px auto 0;
+      max-width: 900px;
+      width: 100%;
+      box-sizing: border-box;
+      background: rgba(253, 251, 247, 0.35);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.55);
+      border-radius: 999px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.75);
+      flex-shrink: 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Navbar Glass Tinted Animated Glow */
+    .navbar::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle at 50% 50%, rgba(191, 161, 129, 0.22), rgba(230, 210, 180, 0.15), rgba(255, 255, 255, 0) 65%);
+      animation: glassTintPulse 6s infinite alternate ease-in-out;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .navbar > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero {
+      padding: 16px 0 12px;
+      text-align: center;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Glassmorphism Tinted Hero Card (Compact Surface Footprint) */
+    .hero-glass-card {
+      background: rgba(253, 251, 247, 0.35);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.55);
+      border-radius: var(--radius-xl, 20px);
+      padding: 18px 12px 34px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+      text-align: center;
+      max-width: 660px;
+      width: 100%;
+      box-sizing: border-box;
+      margin-bottom: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-glass-card::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle at 50% 50%, rgba(191, 161, 129, 0.08), rgba(230, 210, 180, 0.05), rgba(255, 255, 255, 0) 65%);
+      animation: glassTintPulse 8s infinite alternate ease-in-out;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .hero-glass-card>* {
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-title {
+      font-size: 2.5rem;
+      font-weight: 700;
+      line-height: 1.15;
+      color: #1D1D1F;
+      margin-bottom: 10px;
+      text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+    }
+
+    .hero-subtitle {
+      font-size: 0.95rem;
+      color: #2D2D2D;
+      max-width: 600px;
+      margin: 0 auto 18px;
+      line-height: 1.45;
+      font-weight: 500;
+    }
+
+    .cta-group {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      margin-bottom: 36px;
+    }
+
+    /* Glassmorphism Tinted Process Flow Diagram (Shifted Further Downwards) */
+    .flow-diagram {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 20px;
+      margin: 60px auto 3px;
+      max-width: 900px;
+      width: 100%;
+      box-sizing: border-box;
+      background: rgba(253, 251, 247, 0.28);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      border-radius: var(--radius-xl, 20px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.75);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Ambient Animated Tinted Gradient Glow */
+    .flow-diagram::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle at 50% 50%, rgba(191, 161, 129, 0.08), rgba(230, 210, 180, 0.05), rgba(255, 255, 255, 0) 65%);
+      animation: glassTintPulse 8s infinite alternate ease-in-out;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    @keyframes glassTintPulse {
+      0% {
+        transform: translate(-10%, -10%) rotate(0deg) scale(1);
+        opacity: 0.5;
+      }
+
+      50% {
+        transform: translate(10%, 10%) rotate(180deg) scale(1.15);
+        opacity: 0.8;
+      }
+
+      100% {
+        transform: translate(-5%, 5%) rotate(360deg) scale(1);
+        opacity: 0.6;
+      }
+    }
+
+    .flow-step {
+      flex: 1;
+      min-width: 160px;
+      text-align: center;
+      padding: 16px 12px;
+      background: rgba(255, 255, 255, 0.35);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.65);
+      border-radius: var(--radius-lg, 16px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+      position: relative;
+      z-index: 1;
+      transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .flow-step:hover {
+      transform: translateY(-5px) scale(1.02);
+      background: rgba(255, 255, 255, 0.78);
+      border-color: rgba(191, 161, 129, 0.45);
+      box-shadow: 0 12px 30px rgba(191, 161, 129, 0.22), inset 0 1px 0 rgba(255, 255, 255, 1);
+    }
+
+    .flow-arrow {
+      color: var(--accent-primary, #BFA181);
+      font-size: 1.3rem;
+      font-weight: bold;
+      position: relative;
+      z-index: 1;
+      animation: arrowFloat 2s infinite ease-in-out;
+    }
+
+    @keyframes arrowFloat {
+
+      0%,
+      100% {
+        transform: translateX(0);
+      }
+
+      50% {
+        transform: translateX(3px);
+      }
+    }
+
+    footer {
+      padding: 16px 0;
+      border-top: 1px solid var(--glass-border);
+      text-align: center;
+      color: var(--text-subtle);
+      font-size: 0.85rem;
+      flex-shrink: 0;
+    }
+
+    /* Sign In Modal - Cream & Slate Theme */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(45, 45, 45, 0.4);
+      backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.25s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .signin-modal-card {
+      background: #FDFBF7;
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 420px;
+      padding: 32px;
+      box-shadow: var(--shadow-glass);
+      transform: translateY(20px);
+      transition: transform 0.25s ease;
+    }
+
+    .modal-overlay.active .signin-modal-card {
+      transform: translateY(0);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .modal-title {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #2D2D2D;
+    }
+
+    .close-modal-btn {
+      background: none;
+      border: none;
+      font-size: 1.4rem;
+      color: var(--text-subtle);
+      cursor: pointer;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+      text-align: left;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 6px;
+    }
+
+    .form-control-slate {
+      width: 100%;
+      padding: 10px 14px;
+      background: #F5F2ED;
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-md);
+      font-family: var(--font-main);
+      font-size: 0.95rem;
+      color: var(--text-main);
+      box-sizing: border-box;
+      outline: none;
+      transition: all var(--transition-fast);
+    }
+
+    .form-control-slate:focus {
+      border-color: #2D2D2D;
+      background: #FDFBF7;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Looping Frame Sequence Background (Home Page Only) -->
+  <canvas id="bg-frame-canvas"></canvas>
+
+  <div class="landing-container">
+    <!-- Header Navbar -->
+    <header class="navbar">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <img src="assets/genui-logo-mark.svg" alt="GenUI Logo" class="brand-logo-img">
+        <span class="brand-title">GenUI</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <button class="btn btn-secondary btn-sm" onclick="openSignInModal(event)">Sign In</button>
+        <a href="dashboard.html" class="btn btn-primary btn-sm">Launch App</a>
+      </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="hero-glass-card">
+        <span class="badge badge-primary" style="margin-bottom:14px;">AI-POWERED GENERATIVE INTERFACES</span>
+        <h1 class="hero-title">Build Any Interface.<br>Just Describe It.</h1>
+        <p class="hero-subtitle">
+          GenUI transforms natural-language requirements into functional, customizable interfaces in seconds. Stop
+          building rigid, static dashboards — let the interface adapt to the user.
+        </p>
+        <div class="cta-group" style="margin-bottom:0;">
+          <button class="btn btn-primary btn-lg" onclick="openSignInModal(event, 'dashboard.html')">⚡ Create Your
+            UI</button>
+          <button class="btn btn-secondary btn-lg"
+            onclick="openSignInModal(event, 'dashboard.html?prompt=Create%20a%20student%20performance%20dashboard%20with%20marks%20and%20attendance')">▶
+            View Live Demo</button>
+        </div>
+      </div>
+
+      <!-- Process Diagram -->
+      <div class="glass-panel flow-diagram">
+        <div class="flow-step">
+          <div style="font-size:1.6rem; margin-bottom:4px;">🗣️</div>
+          <strong style="color:var(--text-main); font-size:0.9rem;">Natural Language</strong>
+          <p style="font-size:0.75rem; color:var(--text-subtle); margin-top:2px;">"Create a student performance
+            dashboard..."</p>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <div style="font-size:1.6rem; margin-bottom:4px;">🧠</div>
+          <strong style="color:var(--text-main); font-size:0.9rem;">AI Planning</strong>
+          <p style="font-size:0.75rem; color:var(--text-subtle); margin-top:2px;">LLM maps user intent to component
+            types</p>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <div style="font-size:1.6rem; margin-bottom:4px;">📋</div>
+          <strong style="color:var(--text-main); font-size:0.9rem;">Controlled JSON Schema</strong>
+          <p style="font-size:0.75rem; color:var(--text-subtle); margin-top:4px;">Whitelisted strict UI representation
+          </p>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <div style="font-size:1.6rem; margin-bottom:4px;">🖥️</div>
+          <strong style="color:var(--text-main); font-size:0.9rem;">Dynamic UI</strong>
+          <p style="font-size:0.75rem; color:var(--text-subtle); margin-top:2px;">Rendered functional SaaS dashboard</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+      <p>GenUI – Generative UI for Dynamic Workflows • Hackathon Problem Statement Solution</p>
+    </footer>
+  </div>
+
+  <!-- Sign In Modal (Cream & Slate Theme) -->
+  <div class="modal-overlay" id="signin-modal" onclick="if(event.target===this) closeSignInModal();">
+    <div class="signin-modal-card">
+      <div class="modal-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <img src="assets/genui-logo-mark.svg" alt="Logo" style="height:24px;">
+          <span class="modal-title">Sign In to GenUI</span>
+        </div>
+        <button class="close-modal-btn" onclick="closeSignInModal()">&times;</button>
+      </div>
+      <form onsubmit="handleSignInSubmit(event)">
+        <div class="form-group">
+          <label for="signin-email">Email Address</label>
+          <input type="email" id="signin-email" class="form-control-slate" placeholder="name@example.com">
+        </div>
+        <div class="form-group">
+          <label for="signin-password">Password</label>
+          <input type="password" id="signin-password" class="form-control-slate" placeholder="••••••••">
+        </div>
+        <div style="margin-top:20px; display:flex; flex-direction:column; gap:10px;">
+          <button type="submit" class="btn btn-primary" style="width:100%;">Sign In</button>
+          <button type="button" formnovalidate class="btn btn-secondary" onclick="handleGoogleSignIn(event)"
+            style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px;">
+            <svg width="18" height="18" viewBox="0 0 24 24">
+              <path fill="#4285F4"
+                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+              <path fill="#34A853"
+                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+              <path fill="#FBBC05"
+                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+              <path fill="#EA4335"
+                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+            </svg>
+            Continue with Google
+          </button>
+          <button type="button" formnovalidate class="btn btn-secondary" onclick="handleSignInSubmit(event)"
+            style="width:100%; text-align:center; box-sizing:border-box;">🚀 Continue in Demo Mode</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- JS Modules -->
+  <script src="js/utils.js?v=1.1"></script>
+  <script src="js/firebase.js?v=1.1"></script>
+  <script src="js/auth.js?v=1.1"></script>
+
+  <script>
+    let pendingRedirectUrl = 'dashboard.html';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.FirebaseEngine) FirebaseEngine.init();
+      if (window.AuthController) AuthController.init();
+    });
+
+    function openSignInModal(e, redirectUrl) {
+      if (e) e.preventDefault();
+      pendingRedirectUrl = redirectUrl || 'dashboard.html';
+      document.getElementById('signin-modal').classList.add('active');
+    }
+    function closeSignInModal() {
+      document.getElementById('signin-modal').classList.remove('active');
+    }
+    async function handleGoogleSignIn(e) {
+      if (e) e.preventDefault();
+      try {
+        if (window.AuthController) {
+          const user = await AuthController.loginWithGoogle();
+          if (user) {
+            closeSignInModal();
+            window.location.href = pendingRedirectUrl;
+          }
+        }
+      } catch (err) {
+        console.error('Google Sign In Error:', err);
+        if (typeof Utils !== 'undefined' && Utils.showToast) {
+          Utils.showToast('Google Sign In failed: ' + err.message, 'error');
+        }
+      }
+    }
+    async function handleSignInSubmit(e) {
+      if (e) e.preventDefault();
+      const email = document.getElementById('signin-email')?.value;
+      const password = document.getElementById('signin-password')?.value;
+      if (window.AuthController) {
+        if (email && password) {
+          await AuthController.login(email, password);
+        } else {
+          const userEmail = email || 'developer@genui.app';
+          AuthController.currentUser = { uid: 'user_' + Date.now(), name: userEmail.split('@')[0], email: userEmail };
+          localStorage.setItem('genui_user', JSON.stringify(AuthController.currentUser));
+        }
+      }
+      closeSignInModal();
+      window.location.href = pendingRedirectUrl;
+    }
+
+    /* Looping Frame Sequence Animation Engine (Home Page Only) */
+    (function () {
+      const TOTAL_FRAMES = 240;
+      const FPS = 24;
+      const frameInterval = 1000 / FPS;
+      const canvas = document.getElementById('bg-frame-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      const images = [];
+      let loadedCount = 0;
+      let currentFrame = 0;
+      let lastDrawTime = 0;
+
+      function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        if (images[currentFrame] && images[currentFrame].complete) {
+          drawFrame(images[currentFrame]);
+        }
+      }
+      window.addEventListener('resize', resizeCanvas);
+      resizeCanvas();
+
+      function drawFrame(img) {
+        if (!img || !img.naturalWidth) return;
+        const cw = canvas.width;
+        const ch = canvas.height;
+        const iw = img.naturalWidth;
+        const ih = img.naturalHeight;
+        const scale = Math.max(cw / iw, ch / ih);
+        const nw = iw * scale;
+        const nh = ih * scale;
+        const nx = (cw - nw) / 2;
+        const ny = (ch - nh) / 2;
+        ctx.clearRect(0, 0, cw, ch);
+        ctx.drawImage(img, nx, ny, nw, nh);
+      }
+
+      for (let i = 1; i <= TOTAL_FRAMES; i++) {
+        const img = new Image();
+        const pad = String(i).padStart(3, '0');
+        img.src = `assets/frames/ezgif-frame-${pad}.jpg`;
+        img.onload = () => {
+          loadedCount++;
+          if (loadedCount === 1) {
+            drawFrame(img);
+          }
+        };
+        images.push(img);
+      }
+
+      function animate(timestamp) {
+        if (!lastDrawTime) lastDrawTime = timestamp;
+        const elapsed = timestamp - lastDrawTime;
+        if (elapsed >= frameInterval) {
+          lastDrawTime = timestamp - (elapsed % frameInterval);
+          currentFrame = (currentFrame + 1) % TOTAL_FRAMES;
+          if (images[currentFrame] && images[currentFrame].complete) {
+            drawFrame(images[currentFrame]);
+          }
+        }
+        requestAnimationFrame(animate);
+      }
+      requestAnimationFrame(animate);
+    })();
+  </script>
+
+</body>
+
+</html>

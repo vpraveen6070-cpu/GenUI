@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Workflows | GenUI</title>
+  
+  <link rel="icon" type="image/svg+xml" href="assets/genui-logo-mark.svg">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/responsive.css">
+
+  <!-- Firebase v10 Compat SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    window.firebaseConfig = {
+      apiKey: "AIzaSyDrqKFNgfJYs8OXMpXHJU6N73SBK6wqf64",
+      authDomain: "genui-4fd74.firebaseapp.com",
+      projectId: "genui-4fd74",
+      storageBucket: "genui-4fd74.firebasestorage.app",
+      messagingSenderId: "261945930323",
+      appId: "1:261945930323:web:64fb34db006f6832094ca6",
+      measurementId: "G-9W5GXP04PQ"
+    };
+  </script>
+
+  <style>
+    .workflows-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 24px;
+      margin-top: 24px;
+    }
+
+    .workflow-card {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 220px;
+    }
+
+    .workflow-card-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-layout">
+    <!-- LEFT SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div>
+        <div class="brand-container">
+          <img src="assets/genui-logo-mark.svg" alt="GenUI Logo" class="brand-logo-img">
+          <span class="brand-title">GenUI</span>
+        </div>
+
+        <nav class="sidebar-nav">
+          <a href="dashboard.html" class="nav-item" title="New Workflow">
+            <span class="nav-icon">✨</span>
+            <span class="nav-text">New Workflow</span>
+          </a>
+          <a href="workflows.html" class="nav-item active" title="My Workflows">
+            <span class="nav-icon">📂</span>
+            <span class="nav-text">My Workflows</span>
+          </a>
+          <a href="settings.html" class="nav-item" title="Settings">
+            <span class="nav-icon">⚙️</span>
+            <span class="nav-text">Settings</span>
+          </a>
+        </nav>
+      </div>
+
+      <div class="sidebar-footer">
+        <a href="index.html" class="nav-item" title="Back to Home" style="padding:8px 12px; margin:0; text-decoration:none;">
+          <span class="nav-icon">🏠</span>
+          <span class="nav-text">Back to Home</span>
+        </a>
+        <div class="user-profile">
+          <div class="user-avatar" id="user-avatar-text">D</div>
+          <div class="user-info">
+            <span class="user-name" id="user-name-text">Developer</span>
+            <span class="user-role" id="user-role-text">Free Tier</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="workspace-container" style="padding:30px 40px;">
+      
+      <header style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--glass-border); padding-bottom:20px;">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <button class="btn btn-icon sidebar-toggle-btn" onclick="toggleSidebar()" title="Collapse Sidebar">◀</button>
+          <div>
+            <h2>My Workflows</h2>
+            <p style="color:var(--text-muted); font-size:0.9rem;">View, reopen, or duplicate your saved AI-generated interface workflows</p>
+          </div>
+        </div>
+        <a href="dashboard.html" class="btn btn-primary">+ New Interface</a>
+      </header>
+
+      <!-- Workflows Grid -->
+      <section>
+        <div id="workflows-container" class="workflows-grid">
+          <!-- Dynamically populated -->
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- RENAME MODAL -->
+  <div class="modal-overlay" id="rename-modal">
+    <div class="modal-container glass-panel">
+      <h3>Rename Workflow</h3>
+      <input type="hidden" id="rename-id">
+      <div class="form-group" style="margin-top:16px;">
+        <label class="form-label">New Title</label>
+        <input type="text" id="rename-title-input" class="form-input">
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+        <button class="btn btn-secondary" onclick="Utils.closeModal('rename-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="confirmRename()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JS Modules -->
+  <script src="js/utils.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/workflows.js"></script>
+  <script src="js/app.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      FirebaseEngine.init();
+      AuthController.init();
+      renderWorkflowsList();
+    });
+
+    async function renderWorkflowsList() {
+      const container = document.getElementById('workflows-container');
+      if (!container) return;
+
+      container.innerHTML = '<div class="skeleton col-12" style="height:200px;"></div>';
+
+      const list = await FirebaseEngine.getWorkflows();
+
+      if (list.length === 0) {
+        container.innerHTML = `
+          <div class="component-wrapper col-12 glass-panel" style="grid-column: span 3; text-align:center; padding:40px;">
+            <h3>No Saved Workflows Yet</h3>
+            <p style="color:var(--text-muted); margin:10px 0 20px;">Generate a dashboard and click "Save Workflow" to store it here.</p>
+            <a href="dashboard.html" class="btn btn-primary">Create First Interface</a>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = list.map(wf => `
+        <div class="glass-panel workflow-card glass-panel-interactive">
+          <div>
+            <span class="badge badge-primary" style="margin-bottom:8px;">${(wf.uiSchema?.components || []).length} Components</span>
+            <h3 style="font-size:1.15rem; margin-bottom:6px;">${Utils.escapeHTML(wf.title)}</h3>
+            <p style="color:var(--text-subtle); font-size:0.82rem; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
+              "${Utils.escapeHTML(wf.prompt || 'No description prompt')}"
+            </p>
+          </div>
+
+          <div>
+            <div style="font-size:0.75rem; color:var(--text-subtle); margin-bottom:10px;">
+              Saved ${Utils.formatDate(wf.createdAt)}
+            </div>
+            <div class="workflow-card-actions">
+              <a href="dashboard.html?id=${wf.id}" class="btn btn-primary btn-sm" style="flex:1;">Open</a>
+              <button class="btn btn-secondary btn-sm" onclick="openRenameModal('${wf.id}', '${Utils.escapeHTML(wf.title)}')">Rename</button>
+              <button class="btn btn-secondary btn-sm" onclick="WorkflowsController.duplicateWorkflow('${wf.id}')">Copy</button>
+              <button class="btn btn-danger btn-sm" onclick="WorkflowsController.deleteWorkflow('${wf.id}')">🗑️</button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function openRenameModal(id, title) {
+      document.getElementById('rename-id').value = id;
+      document.getElementById('rename-title-input').value = title;
+      Utils.openModal('rename-modal');
+    }
+
+    async function confirmRename() {
+      const id = document.getElementById('rename-id').value;
+      const newTitle = document.getElementById('rename-title-input').value.trim();
+      if (!newTitle) return;
+
+      const wf = await FirebaseEngine.getWorkflowById(id);
+      if (wf) {
+        wf.title = newTitle;
+        await FirebaseEngine.saveWorkflow(wf);
+        Utils.showToast('Workflow renamed', 'success');
+        Utils.closeModal('rename-modal');
+        renderWorkflowsList();
+      }
+    }
+
+    window.renderWorkflowsList = renderWorkflowsList;
+  </script>
+</body>
+</html>

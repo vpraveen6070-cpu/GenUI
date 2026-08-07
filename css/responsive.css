@@ -1,0 +1,110 @@
+/* Responsive Design & Media Queries */
+
+.sidebar-toggle-btn {
+  display: inline-flex;
+}
+
+@media (max-width: 1024px) {
+
+  .col-8,
+  .col-6,
+  .col-4,
+  .col-3 {
+    grid-column: span 6;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-layout {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    transform: translateX(-100%);
+    z-index: 1000;
+    box-shadow: 10px 0 30px rgba(45, 45, 45, 0.1);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .sidebar-toggle-btn {
+    display: inline-flex;
+  }
+
+  .col-12,
+  .col-8,
+  .col-6,
+  .col-4,
+  .col-3 {
+    grid-column: span 12;
+  }
+
+  .prompt-hero-container {
+    width: 95%;
+    margin-top: 15px;
+  }
+
+  .modification-dock {
+    width: 95%;
+    border-radius: var(--radius-lg);
+    bottom: 12px;
+    padding: 10px 14px;
+  }
+
+  .preset-chips {
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+}
+
+/* Print / Export PDF Overrides */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  .sidebar,
+  .workspace-header,
+  .canvas-page-header,
+  .prompt-hero-container,
+  .modification-dock,
+  .header-actions,
+  .component-action-toolbar {
+    display: none !important;
+  }
+
+  .workspace-container {
+    height: auto !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+  }
+
+  .canvas-grid-container {
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+  }
+
+  .component-wrapper {
+    background: #ffffff !important;
+    border: 1px solid #cccccc !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+    page-break-inside: avoid;
+  }
+
+  .metric-value,
+  .card-title,
+  .timeline-title,
+  .custom-table td {
+    color: #000000 !important;
+  }
+}

@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Canvas Result | GenUI</title>
+  
+  <link rel="icon" type="image/svg+xml" href="assets/genui-logo-mark.svg">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/responsive.css">
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- Firebase v10 Compat SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  
+  <script>
+    window.firebaseConfig = {
+      apiKey: "AIzaSyDrqKFNgfJYs8OXMpXHJU6N73SBK6wqf64",
+      authDomain: "genui-4fd74.firebaseapp.com",
+      projectId: "genui-4fd74",
+      storageBucket: "genui-4fd74.firebasestorage.app",
+      messagingSenderId: "261945930323",
+      appId: "1:261945930323:web:64fb34db006f6832094ca6",
+      measurementId: "G-9W5GXP04PQ"
+    };
+  </script>
+  <style>
+    .canvas-page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 32px;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--glass-border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .canvas-page-container {
+      padding: 32px;
+      max-width: 1400px;
+      margin: 0 auto;
+      min-height: calc(100vh - 160px);
+      padding-bottom: 110px;
+    }
+
+    /* Expand Left Sidebar Width on Canvas Page Only for AI Chatbot */
+    .sidebar:not(.collapsed) {
+      width: 330px !important;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-layout">
+
+    <!-- LEFT SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div>
+        <div class="brand-container">
+          <img src="assets/genui-logo-mark.svg" alt="GenUI Logo" class="brand-logo-img">
+          <span class="brand-title">GenUI</span>
+        </div>
+
+        <!-- SIDEBAR AI CHATBOT MODIFICATION SECTION -->
+        <div class="sidebar-chat-card" style="margin-top:20px;">
+          <div class="sidebar-chat-header">
+            <span>💬 Modify UI with AI</span>
+          </div>
+          <textarea 
+            id="mod-input" 
+            class="sidebar-chat-input" 
+            placeholder="Tell AI how to change this interface (e.g. 'Add attendance warning' or 'Add pie chart')..."
+            rows="3"
+            onkeydown="if(event.key==='Enter' && !event.shiftKey){ event.preventDefault(); handleModifyClick(); }"
+          ></textarea>
+          <button class="btn btn-primary btn-sm sidebar-update-btn" id="mod-btn" onclick="handleModifyClick()">⚡ Update UI</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN RESULT CONTENT -->
+    <main class="workspace-container" style="padding:0;">
+      
+      <!-- Top Header Toolbar -->
+      <header class="canvas-page-header">
+        <div style="display:flex; align-items:center; gap:14px;">
+          <button class="btn btn-icon sidebar-toggle-btn" onclick="toggleSidebar()" title="Collapse Sidebar">◀</button>
+          <a href="dashboard.html" class="btn btn-secondary btn-sm" style="text-decoration:none;">← Create New UI</a>
+          <h2 style="font-size:1.1rem; font-weight:700; margin-left:8px;" id="canvas-page-title">Interactive Canvas Result</h2>
+        </div>
+
+        <div class="header-actions">
+          <button class="btn btn-secondary btn-sm" onclick="showSchemaModal()">🔍 View JSON</button>
+          <button class="btn btn-secondary btn-sm" onclick="WorkflowsController.printUI()">📄 Export PDF</button>
+          <button class="btn btn-secondary btn-sm" onclick="WorkflowsController.exportJSON()">💾 Download JSON</button>
+          <button class="btn btn-primary btn-sm" onclick="Utils.openModal('save-modal')">📌 Save Workflow</button>
+        </div>
+      </header>
+
+      <!-- Rendered Canvas Grid Container -->
+      <div class="canvas-page-container">
+        <div class="dynamic-grid grid-12" id="dynamic-canvas-grid">
+          <!-- Dynamically generated UI components will render here -->
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- WORKFLOW SAVE MODAL -->
+  <div class="modal-overlay" id="save-modal">
+    <div class="modal-container glass-panel">
+      <h3 style="margin-bottom:16px;">Save Workflow to Library</h3>
+      <div class="form-group">
+        <label class="form-label">Workflow Title</label>
+        <input type="text" id="save-workflow-title" class="form-input" value="Generated UI Result">
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+        <button class="btn btn-secondary" onclick="Utils.closeModal('save-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="WorkflowsController.saveCurrentWorkflow()">Save to Library</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW JSON SCHEMA MODAL -->
+  <div class="modal-overlay" id="schema-modal">
+    <div class="modal-container glass-panel" style="max-width:700px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <h3>Controlled JSON UI Schema</h3>
+        <button class="btn btn-secondary btn-sm" onclick="Utils.copyToClipboard(document.getElementById('schema-code-block').textContent)">📋 Copy JSON</button>
+      </div>
+      <pre id="schema-code-block" style="background:#F5F2ED; padding:16px; border-radius:var(--radius-md); font-family:var(--font-code); font-size:0.85rem; color:#2D2D2D; max-height:400px; overflow-y:auto; border:1px solid #E4E2DE;"></pre>
+      <div style="display:flex; justify-content:flex-end; margin-top:20px;">
+        <button class="btn btn-secondary" onclick="Utils.closeModal('schema-modal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIVE SECTION EDITOR MODAL -->
+  <div class="modal-overlay" id="section-editor-modal">
+    <div class="modal-container glass-panel" style="max-width:850px; width:92%;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:1px solid var(--glass-border); padding-bottom:12px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="font-size:1.4rem;">✏️</span>
+          <h3 style="margin:0;">Live Section Editor</h3>
+        </div>
+        <button class="close-modal-btn" onclick="Utils.closeModal('section-editor-modal')">&times;</button>
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px;">
+        <!-- Left Side: Live Form Controls -->
+        <div style="display:flex; flex-direction:column; gap:14px;">
+          <div class="form-group">
+            <label class="form-label" style="font-weight:600;">Section Title</label>
+            <input type="text" id="edit-sec-title" class="form-input" placeholder="Enter section title..." oninput="UIRenderer.updateLivePreview()">
+          </div>
+
+          <div class="form-group" id="edit-sec-content-group">
+            <label class="form-label" style="font-weight:600;">Content / Description</label>
+            <textarea id="edit-sec-content" class="form-input" rows="3" placeholder="Enter content or description..." oninput="UIRenderer.updateLivePreview()"></textarea>
+          </div>
+
+          <div class="form-group" id="edit-sec-subtitle-group">
+            <label class="form-label" style="font-weight:600;">Subtitle</label>
+            <input type="text" id="edit-sec-subtitle" class="form-input" placeholder="Enter subtitle..." oninput="UIRenderer.updateLivePreview()">
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div class="form-group">
+              <label class="form-label" style="font-weight:600;">Column Width</label>
+              <select id="edit-sec-colSpan" class="form-input" onchange="UIRenderer.updateLivePreview()">
+                <option value="12">Full Width (12/12)</option>
+                <option value="8">Two Thirds (8/12)</option>
+                <option value="6">Half Width (6/12)</option>
+                <option value="4">One Third (4/12)</option>
+                <option value="3">Quarter Width (3/12)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" style="font-weight:600;">Style Variant</label>
+              <select id="edit-sec-variant" class="form-input" onchange="UIRenderer.updateLivePreview()">
+                <option value="">Default Glass</option>
+                <option value="warning">Warning ⚠️</option>
+                <option value="info">Info ℹ️</option>
+                <option value="success">Success ✅</option>
+                <option value="danger">Danger 🚨</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Side: Real-Time Live Preview -->
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <label class="form-label" style="font-weight:600; display:flex; align-items:center; gap:6px;">
+            <span>👁️ Real-Time Live Preview</span>
+          </label>
+          <div style="background: rgba(245, 242, 237, 0.6); padding: 18px; border-radius: var(--radius-lg); border: 1px solid var(--glass-border); min-height: 220px; display:flex; align-items:center; justify-content:center; max-height:360px; overflow-y:auto;" id="live-preview-box">
+            <!-- Rendered preview of component will live here in real time -->
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:24px; border-top:1px solid var(--glass-border); padding-top:16px;">
+        <button class="btn btn-secondary" onclick="Utils.closeModal('section-editor-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="UIRenderer.saveLiveEdit()">💾 Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JS Modules -->
+  <script src="js/utils.js?v=1.9"></script>
+  <script src="js/schema-validator.js?v=1.9"></script>
+  <script src="js/charts.js?v=1.9"></script>
+  <script src="js/ai.js?v=1.9"></script>
+  <script src="js/ui-renderer.js?v=1.9"></script>
+  <script src="js/firebase.js?v=1.9"></script>
+  <script src="js/auth.js?v=1.9"></script>
+  <script src="js/workflows.js?v=1.9"></script>
+  <script src="js/app.js?v=1.9"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Load active schema from sessionStorage
+      const rawSchema = sessionStorage.getItem('genui_active_schema');
+      if (rawSchema) {
+        try {
+          const schema = JSON.parse(rawSchema);
+          window.currentSchema = schema;
+          UIRenderer.render(schema);
+          if (schema.title) {
+            document.getElementById('canvas-page-title').textContent = schema.title;
+          }
+        } catch (e) {
+          console.error('Failed to parse active schema from sessionStorage:', e);
+        }
+      } else {
+        // Fallback placeholder if opened directly without prior generation
+        const grid = document.getElementById('dynamic-canvas-grid');
+        if (grid) {
+          grid.innerHTML = `
+            <div class="component-wrapper col-12 glass-panel" style="text-align: center; padding: 60px 20px;">
+              <div style="font-size:3rem; margin-bottom:12px;">🎨</div>
+              <h3>No Active Interface Found</h3>
+              <p style="color:var(--text-muted); max-width:500px; margin:8px auto 20px;">
+                Create an interface using the prompt builder workspace to view its result here.
+              </p>
+              <a href="dashboard.html" class="btn btn-primary">
+                ✨ Go to Prompt Builder Workspace
+              </a>
+            </div>
+          `;
+        }
+      }
+    });
+
+    function showSchemaModal() {
+      if (!window.currentSchema) {
+        Utils.showToast('No active schema to display.', 'warning');
+        return;
+      }
+      document.getElementById('schema-code-block').textContent = JSON.stringify(window.currentSchema, null, 2);
+      Utils.openModal('schema-modal');
+    }
+  </script>
+
+</body>
+</html>
