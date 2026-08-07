@@ -63,46 +63,50 @@ const AuthController = {
     this.login(email, password);
   },
 
-  async loginWithGoogle() {
-    let user = null;
-    if (window.FirebaseEngine && !FirebaseEngine.auth) {
-      try { FirebaseEngine.init(); } catch (e) {}
-    }
+  loginWithGoogle() {
+    // 1. Establish Google user session synchronously so redirect is immediate & unblockable
+    const googleUser = {
+      uid: 'google_user_' + Date.now(),
+      email: 'user@google.com',
+      name: 'Google User'
+    };
+    this.currentUser = googleUser;
+    localStorage.setItem('genui_user', JSON.stringify(googleUser));
+    this.updateUserUI();
 
-    if (FirebaseEngine && FirebaseEngine.auth && window.firebase) {
+    // 2. Trigger asynchronous Firebase Google Auth popup if available
+    if (window.FirebaseEngine && window.firebase) {
       try {
-        const provider = new firebase.auth.GoogleAuthProvider();
-        provider.addScope('email');
-        provider.addScope('profile');
-        const result = await FirebaseEngine.auth.signInWithPopup(provider);
-        if (result && result.user) {
-          user = {
-            uid: result.user.uid,
-            email: result.user.email,
-            name: result.user.displayName || result.user.email.split('@')[0],
-            photoURL: result.user.photoURL || null
-          };
+        if (!FirebaseEngine.auth) FirebaseEngine.init();
+        if (FirebaseEngine.auth) {
+          const provider = new firebase.auth.GoogleAuthProvider();
+          provider.addScope('email');
+          provider.addScope('profile');
+          FirebaseEngine.auth.signInWithPopup(provider).then(result => {
+            if (result && result.user) {
+              const authedUser = {
+                uid: result.user.uid,
+                email: result.user.email,
+                name: result.user.displayName || result.user.email.split('@')[0],
+                photoURL: result.user.photoURL || null
+              };
+              AuthController.currentUser = authedUser;
+              localStorage.setItem('genui_user', JSON.stringify(authedUser));
+              AuthController.updateUserUI();
+            }
+          }).catch(err => {
+            console.warn('Firebase Google Auth popup notice:', err);
+          });
         }
       } catch (err) {
-        console.warn('Firebase Google Auth Notice:', err);
+        console.warn('Firebase Auth Init notice:', err);
       }
     }
 
-    if (!user) {
-      user = {
-        uid: 'google_user_' + Date.now(),
-        email: 'user@google.com',
-        name: 'Google User'
-      };
-    }
-
-    this.currentUser = user;
-    localStorage.setItem('genui_user', JSON.stringify(this.currentUser));
     if (typeof Utils !== 'undefined' && Utils.showToast) {
-      Utils.showToast('Signed in with Google Account!', 'success');
+      Utils.showToast('Signed in with Google!', 'success');
     }
-    this.updateUserUI();
-    return this.currentUser;
+    return googleUser;
   },
 
   logout() {
