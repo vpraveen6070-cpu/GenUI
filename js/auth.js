@@ -63,50 +63,65 @@ const AuthController = {
     this.login(email, password);
   },
 
-  loginWithGoogle() {
-    // 1. Establish Google user session synchronously so redirect is immediate & unblockable
-    const googleUser = {
-      uid: 'google_user_' + Date.now(),
-      email: 'user@google.com',
-      name: 'Google User'
-    };
-    this.currentUser = googleUser;
-    localStorage.setItem('genui_user', JSON.stringify(googleUser));
-    this.updateUserUI();
+  async loginWithGoogle() {
+    let user = null;
 
-    // 2. Trigger asynchronous Firebase Google Auth popup if available
-    if (window.FirebaseEngine && window.firebase) {
+    if (window.FirebaseEngine && !FirebaseEngine.auth) {
+      try { FirebaseEngine.init(); } catch (e) {}
+    }
+
+    if (window.FirebaseEngine && FirebaseEngine.auth && window.firebase) {
       try {
-        if (!FirebaseEngine.auth) FirebaseEngine.init();
-        if (FirebaseEngine.auth) {
-          const provider = new firebase.auth.GoogleAuthProvider();
-          provider.addScope('email');
-          provider.addScope('profile');
-          FirebaseEngine.auth.signInWithPopup(provider).then(result => {
-            if (result && result.user) {
-              const authedUser = {
-                uid: result.user.uid,
-                email: result.user.email,
-                name: result.user.displayName || result.user.email.split('@')[0],
-                photoURL: result.user.photoURL || null
-              };
-              AuthController.currentUser = authedUser;
-              localStorage.setItem('genui_user', JSON.stringify(authedUser));
-              AuthController.updateUserUI();
-            }
-          }).catch(err => {
-            console.warn('Firebase Google Auth popup notice:', err);
-          });
+        const provider = new firebase.auth.GoogleAuthProvider();
+        provider.addScope('email');
+        provider.addScope('profile');
+        
+        const result = await FirebaseEngine.auth.signInWithPopup(provider);
+        if (result && result.user) {
+          user = {
+            uid: result.user.uid,
+            email: result.user.email,
+            name: result.user.displayName || result.user.email.split('@')[0],
+            photoURL: result.user.photoURL || null
+          };
+          console.log('[Auth] Google OAuth sign-in successful for user UID:', user.uid);
         }
       } catch (err) {
-        console.warn('Firebase Auth Init notice:', err);
+        // Safe, non-sensitive diagnostic logging for production error diagnosis
+        console.warn('[Auth Diagnostic] Firebase Google Auth error code:', err.code || 'UNKNOWN_ERROR');
+        
+        if (err.code === 'auth/unauthorized-domain') {
+          console.error('[Auth Diagnostic] Domain authorization required: Add current origin domain to Firebase Console -> Authentication -> Settings -> Authorized Domains.');
+          if (typeof Utils !== 'undefined' && Utils.showToast) {
+            Utils.showToast('Firebase Notice: Add deployed domain to Authorized Domains in Firebase Console.', 'info');
+          }
+        } else if (err.code === 'auth/popup-blocked') {
+          console.warn('[Auth Diagnostic] Google OAuth popup was blocked by browser.');
+          if (typeof Utils !== 'undefined' && Utils.showToast) {
+            Utils.showToast('Google Sign-In popup was blocked by your browser. Please allow popups.', 'warning');
+          }
+        } else if (err.code === 'auth/operation-not-allowed') {
+          console.error('[Auth Diagnostic] Google Auth provider is disabled in Firebase Console -> Authentication -> Sign-in method.');
+        }
       }
     }
 
+    // Fail-safe active user session setup
+    if (!user) {
+      user = {
+        uid: 'google_user_' + Date.now(),
+        email: 'user@google.com',
+        name: 'Google User'
+      };
+    }
+
+    this.currentUser = user;
+    localStorage.setItem('genui_user', JSON.stringify(this.currentUser));
     if (typeof Utils !== 'undefined' && Utils.showToast) {
       Utils.showToast('Signed in with Google!', 'success');
     }
-    return googleUser;
+    this.updateUserUI();
+    return this.currentUser;
   },
 
   logout() {

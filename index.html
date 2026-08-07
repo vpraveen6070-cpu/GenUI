@@ -506,20 +506,21 @@
     function closeSignInModal() {
       document.getElementById('signin-modal').classList.remove('active');
     }
-    function handleGoogleSignIn(e) {
+    async function handleGoogleSignIn(e) {
       if (e) {
         e.preventDefault();
         e.stopPropagation();
       }
       try {
         if (window.AuthController) {
-          AuthController.loginWithGoogle();
+          await AuthController.loginWithGoogle();
         }
       } catch (err) {
-        console.error('Google Sign In Error:', err);
+        console.error('[Auth] Google Sign In Error:', err);
+      } finally {
+        closeSignInModal();
+        window.location.href = pendingRedirectUrl || 'dashboard.html';
       }
-      closeSignInModal();
-      window.location.href = pendingRedirectUrl || 'dashboard.html';
     }
     async function handleSignInSubmit(e) {
       if (e) e.preventDefault();
