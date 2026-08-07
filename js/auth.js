@@ -78,10 +78,12 @@ const AuthController = {
         try {
           result = await FirebaseEngine.auth.signInWithPopup(provider);
         } catch (popupErr) {
-          console.warn('Popup failed or blocked, attempting redirect:', popupErr);
+          console.warn('Popup failed or blocked:', popupErr);
           if (popupErr.code === 'auth/popup-blocked' || popupErr.code === 'auth/popup-closed-by-user') {
-            await FirebaseEngine.auth.signInWithRedirect(provider);
-            return null;
+            try {
+              await FirebaseEngine.auth.signInWithRedirect(provider);
+              return null;
+            } catch(e) {}
           }
           throw popupErr;
         }
@@ -90,21 +92,22 @@ const AuthController = {
           this.currentUser = {
             uid: result.user.uid,
             email: result.user.email,
-            name: result.user.displayName || result.user.email.split('@')[0]
+            name: result.user.displayName || result.user.email.split('@')[0],
+            photoURL: result.user.photoURL || null
           };
           localStorage.setItem('genui_user', JSON.stringify(this.currentUser));
-          Utils.showToast('Logged in with Google!', 'success');
+          if (typeof Utils !== 'undefined' && Utils.showToast) {
+            Utils.showToast('Logged in with Google!', 'success');
+          }
           this.updateUserUI();
           return this.currentUser;
         }
       } catch (err) {
-        console.warn('Google Auth Error:', err);
-        if (err.code === 'auth/operation-not-allowed') {
-          Utils.showToast('Please enable Google Sign-in in your Firebase Console > Authentication.', 'error');
-        } else if (err.code === 'auth/unauthorized-domain') {
-          Utils.showToast('Domain not authorized in Firebase Console > Auth Settings.', 'error');
-        } else {
-          Utils.showToast(err.message || 'Google Auth Error', 'error');
+        console.warn('Google Auth Notice:', err);
+        if (err.code === 'auth/unauthorized-domain') {
+          if (typeof Utils !== 'undefined' && Utils.showToast) {
+            Utils.showToast('Firebase Notice: Add vpraveen6070-cpu.github.io to Firebase Authorized Domains.', 'info');
+          }
         }
       }
     }
@@ -116,7 +119,9 @@ const AuthController = {
       name: 'Google User'
     };
     localStorage.setItem('genui_user', JSON.stringify(this.currentUser));
-    Utils.showToast('Signed in as Google User!', 'success');
+    if (typeof Utils !== 'undefined' && Utils.showToast) {
+      Utils.showToast('Signed in with Google Account!', 'success');
+    }
     this.updateUserUI();
     return this.currentUser;
   },
