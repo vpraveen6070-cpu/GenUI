@@ -76,6 +76,7 @@ const AuthController = {
         provider.addScope('email');
         provider.addScope('profile');
         
+        console.log('[Auth] Opening Firebase Google Sign-In popup...');
         const result = await FirebaseEngine.auth.signInWithPopup(provider);
         if (result && result.user) {
           user = {
@@ -84,10 +85,10 @@ const AuthController = {
             name: result.user.displayName || result.user.email.split('@')[0],
             photoURL: result.user.photoURL || null
           };
-          console.log('[Auth] Native Firebase Google OAuth sign-in successful for:', user.email);
+          console.log('[Auth] Google OAuth sign-in successful for:', user.email);
         }
       } catch (err) {
-        console.warn('[Auth Notice] Firebase Google Auth error:', err);
+        console.warn('[Auth Diagnostic] Firebase Google Auth notice:', err);
       }
     }
 
@@ -102,7 +103,7 @@ const AuthController = {
     this.currentUser = user;
     localStorage.setItem('genui_user', JSON.stringify(this.currentUser));
     if (typeof Utils !== 'undefined' && Utils.showToast) {
-      Utils.showToast(`Welcome ${user.name}! Signed in with Google.`, 'success');
+      Utils.showToast(`Signed in as ${user.name}`, 'success');
     }
     this.updateUserUI();
     return this.currentUser;
