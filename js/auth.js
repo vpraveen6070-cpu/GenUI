@@ -20,6 +20,36 @@ const AuthController = {
         this.updateUserUI();
       });
     }
+
+    this.checkRedirectResult();
+  },
+
+  async checkRedirectResult() {
+    if (window.FirebaseEngine && FirebaseEngine.auth) {
+      try {
+        const result = await FirebaseEngine.auth.getRedirectResult();
+        if (result && result.user) {
+          const authedUser = {
+            uid: result.user.uid,
+            email: result.user.email,
+            name: result.user.displayName || result.user.email.split('@')[0],
+            photoURL: result.user.photoURL || null
+          };
+          this.currentUser = authedUser;
+          localStorage.setItem('genui_user', JSON.stringify(authedUser));
+          this.updateUserUI();
+          console.log('[Auth] Google Redirect authentication successful for:', authedUser.email);
+          if (typeof Utils !== 'undefined' && Utils.showToast) {
+            Utils.showToast(`Signed in as ${authedUser.name}`, 'success');
+          }
+          if (window.location.pathname.endsWith('index.html') || window.location.pathname.endsWith('/GenUI/')) {
+            window.location.href = 'dashboard.html';
+          }
+        }
+      } catch (err) {
+        console.warn('[Auth Diagnostic] getRedirectResult notice:', err.code || err.message);
+      }
+    }
   },
 
   async login(email, password) {
@@ -76,7 +106,7 @@ const AuthController = {
         provider.addScope('email');
         provider.addScope('profile');
         
-        console.log('[Auth] Opening Firebase Google Sign-In popup...');
+        console.log('[Auth] Initiating Google Auth popup...');
         const result = await FirebaseEngine.auth.signInWithPopup(provider);
         if (result && result.user) {
           user = {
@@ -85,10 +115,22 @@ const AuthController = {
             name: result.user.displayName || result.user.email.split('@')[0],
             photoURL: result.user.photoURL || null
           };
-          console.log('[Auth] Google OAuth sign-in successful for:', user.email);
+          console.log('[Auth] Google OAuth popup sign-in successful for:', user.email);
         }
       } catch (err) {
-        console.warn('[Auth Diagnostic] Firebase Google Auth notice:', err);
+        console.warn('[Auth Diagnostic] Popup notice:', err.code || err.message);
+
+        // Fallback to signInWithRedirect if popup is blocked or fails
+        if (err.code === 'auth/popup-blocked' || err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
+          try {
+            console.log('[Auth] Switching to signInWithRedirect fallback...');
+            const provider = new firebase.auth.GoogleAuthProvider();
+            await FirebaseEngine.auth.signInWithRedirect(provider);
+            return;
+          } catch (redErr) {
+            console.warn('[Auth Diagnostic] signInWithRedirect notice:', redErr);
+          }
+        }
       }
     }
 
