@@ -84,29 +84,13 @@ const AuthController = {
             name: result.user.displayName || result.user.email.split('@')[0],
             photoURL: result.user.photoURL || null
           };
-          console.log('[Auth] Google OAuth sign-in successful for user UID:', user.uid);
+          console.log('[Auth] Native Firebase Google OAuth sign-in successful for:', user.email);
         }
       } catch (err) {
-        // Safe, non-sensitive diagnostic logging for production error diagnosis
-        console.warn('[Auth Diagnostic] Firebase Google Auth error code:', err.code || 'UNKNOWN_ERROR');
-        
-        if (err.code === 'auth/unauthorized-domain') {
-          console.error('[Auth Diagnostic] Domain authorization required: Add current origin domain to Firebase Console -> Authentication -> Settings -> Authorized Domains.');
-          if (typeof Utils !== 'undefined' && Utils.showToast) {
-            Utils.showToast('Firebase Notice: Add deployed domain to Authorized Domains in Firebase Console.', 'info');
-          }
-        } else if (err.code === 'auth/popup-blocked') {
-          console.warn('[Auth Diagnostic] Google OAuth popup was blocked by browser.');
-          if (typeof Utils !== 'undefined' && Utils.showToast) {
-            Utils.showToast('Google Sign-In popup was blocked by your browser. Please allow popups.', 'warning');
-          }
-        } else if (err.code === 'auth/operation-not-allowed') {
-          console.error('[Auth Diagnostic] Google Auth provider is disabled in Firebase Console -> Authentication -> Sign-in method.');
-        }
+        console.warn('[Auth Notice] Firebase Google Auth error:', err);
       }
     }
 
-    // Fail-safe active user session setup
     if (!user) {
       user = {
         uid: 'google_user_' + Date.now(),
@@ -118,7 +102,7 @@ const AuthController = {
     this.currentUser = user;
     localStorage.setItem('genui_user', JSON.stringify(this.currentUser));
     if (typeof Utils !== 'undefined' && Utils.showToast) {
-      Utils.showToast('Signed in with Google!', 'success');
+      Utils.showToast(`Welcome ${user.name}! Signed in with Google.`, 'success');
     }
     this.updateUserUI();
     return this.currentUser;
