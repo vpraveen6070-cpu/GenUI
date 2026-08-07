@@ -1,26 +1,37 @@
 /* GenUI Firebase Integration & Persistence Engine */
 
+const firebaseConfig = {
+  apiKey: "AIzaSyDrqKFNgfJYs8OXMpXHJU6N73SBK6wqf64",
+  authDomain: "genui-4fd74.firebaseapp.com",
+  projectId: "genui-4fd74",
+  storageBucket: "genui-4fd74.firebasestorage.app",
+  messagingSenderId: "261945930323",
+  appId: "1:261945930323:web:64fb34db006f6832094ca6",
+  measurementId: "G-9W5GXP04PQ"
+};
+
+window.firebaseConfig = firebaseConfig;
+
 const FirebaseEngine = {
   db: null,
   auth: null,
   isFirebaseActive: false,
 
   init() {
-    // Check if firebase script is loaded and configured
-    if (window.firebase && window.firebaseConfig && window.firebaseConfig.apiKey !== 'YOUR_FIREBASE_API_KEY') {
+    if (window.firebase) {
       try {
         if (!firebase.apps.length) {
-          firebase.initializeApp(window.firebaseConfig);
+          firebase.initializeApp(firebaseConfig);
         }
         this.db = firebase.firestore();
         this.auth = firebase.auth();
         this.isFirebaseActive = true;
-        console.log('Firebase initialized successfully.');
+        console.log('[Firebase] Initialized successfully for project:', firebaseConfig.projectId);
       } catch (err) {
-        console.warn('Firebase init error, using LocalStorage fallback:', err);
+        console.warn('[Firebase] Init notice:', err);
       }
     } else {
-      console.log('Firebase credentials pending. Active mode: High-Speed LocalStorage Persistence.');
+      console.log('[Firebase] SDK pending. LocalStorage active.');
     }
   },
 
