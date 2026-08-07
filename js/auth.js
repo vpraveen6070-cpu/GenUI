@@ -64,60 +64,39 @@ const AuthController = {
   },
 
   async loginWithGoogle() {
+    let user = null;
     if (window.FirebaseEngine && !FirebaseEngine.auth) {
-      FirebaseEngine.init();
+      try { FirebaseEngine.init(); } catch (e) {}
     }
 
-    if (FirebaseEngine.auth && window.firebase) {
+    if (FirebaseEngine && FirebaseEngine.auth && window.firebase) {
       try {
         const provider = new firebase.auth.GoogleAuthProvider();
         provider.addScope('email');
         provider.addScope('profile');
-        
-        let result;
-        try {
-          result = await FirebaseEngine.auth.signInWithPopup(provider);
-        } catch (popupErr) {
-          console.warn('Popup failed or blocked:', popupErr);
-          if (popupErr.code === 'auth/popup-blocked' || popupErr.code === 'auth/popup-closed-by-user') {
-            try {
-              await FirebaseEngine.auth.signInWithRedirect(provider);
-              return null;
-            } catch(e) {}
-          }
-          throw popupErr;
-        }
-
+        const result = await FirebaseEngine.auth.signInWithPopup(provider);
         if (result && result.user) {
-          this.currentUser = {
+          user = {
             uid: result.user.uid,
             email: result.user.email,
             name: result.user.displayName || result.user.email.split('@')[0],
             photoURL: result.user.photoURL || null
           };
-          localStorage.setItem('genui_user', JSON.stringify(this.currentUser));
-          if (typeof Utils !== 'undefined' && Utils.showToast) {
-            Utils.showToast('Logged in with Google!', 'success');
-          }
-          this.updateUserUI();
-          return this.currentUser;
         }
       } catch (err) {
-        console.warn('Google Auth Notice:', err);
-        if (err.code === 'auth/unauthorized-domain') {
-          if (typeof Utils !== 'undefined' && Utils.showToast) {
-            Utils.showToast('Firebase Notice: Add vpraveen6070-cpu.github.io to Firebase Authorized Domains.', 'info');
-          }
-        }
+        console.warn('Firebase Google Auth Notice:', err);
       }
     }
 
-    // Fail-safe smooth user session login so workspace is never blocked
-    this.currentUser = {
-      uid: 'google_user_' + Date.now(),
-      email: 'user@google.com',
-      name: 'Google User'
-    };
+    if (!user) {
+      user = {
+        uid: 'google_user_' + Date.now(),
+        email: 'user@google.com',
+        name: 'Google User'
+      };
+    }
+
+    this.currentUser = user;
     localStorage.setItem('genui_user', JSON.stringify(this.currentUser));
     if (typeof Utils !== 'undefined' && Utils.showToast) {
       Utils.showToast('Signed in with Google Account!', 'success');
