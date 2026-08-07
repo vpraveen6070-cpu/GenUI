@@ -486,9 +486,9 @@
   </div>
 
   <!-- JS Modules -->
-  <script src="js/utils.js?v=30.0"></script>
-  <script src="js/firebase.js?v=30.0"></script>
-  <script src="js/auth.js?v=30.0"></script>
+  <script src="js/utils.js?v=50.0"></script>
+  <script src="js/firebase.js?v=50.0"></script>
+  <script src="js/auth.js?v=50.0"></script>
 
   <script>
     let pendingRedirectUrl = 'dashboard.html';
@@ -501,13 +501,6 @@
     function openSignInModal(e, redirectUrl) {
       if (e) e.preventDefault();
       pendingRedirectUrl = redirectUrl || 'dashboard.html';
-
-      const stored = localStorage.getItem('genui_user');
-      if (stored) {
-        window.location.href = pendingRedirectUrl;
-        return;
-      }
-
       document.getElementById('signin-modal').classList.add('active');
     }
     function closeSignInModal() {
